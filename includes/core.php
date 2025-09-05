@@ -62,8 +62,17 @@ class WP_Logo_Link
   public function activate()
   {
     // Set default options
-    if (!get_option('wpll_right_click_type')) {
-      update_option('wpll_right_click_type', 'assets');
+    if (!get_option('wpll_assets_text')) {
+      update_option('wpll_assets_text', 'View Logo Assets');
+    }
+    if (!get_option('wpll_assets_url')) {
+      update_option('wpll_assets_url', admin_url('upload.php'));
+    }
+    if (!get_option('wpll_custom_text')) {
+      update_option('wpll_custom_text', 'About Our Brand');
+    }
+    if (!get_option('wpll_custom_url')) {
+      update_option('wpll_custom_url', home_url('/about'));
     }
   }
 

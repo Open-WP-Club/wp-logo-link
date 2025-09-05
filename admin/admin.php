@@ -94,7 +94,7 @@ class WP_Logo_Link_Admin
     <label for="wpll_custom">Custom Link</label><br>
 
     <p class="description">Choose what happens when users right-click on your logo</p>
-  <?php
+<?php
   }
 
   /**
@@ -139,51 +139,6 @@ class WP_Logo_Link_Admin
   }
 
   /**
-   * Add JavaScript for admin settings page
-   */
-  public function admin_scripts($hook)
-  {
-    if ($hook !== 'options-general.php') {
-      return;
-    }
-  ?>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const assetsRadio = document.getElementById('wpll_assets');
-        const customRadio = document.getElementById('wpll_custom');
-        const assetsFields = document.getElementById('wpll_assets_fields');
-        const customFields = document.getElementById('wpll_custom_fields');
-
-        function toggleFields() {
-          if (assetsRadio && assetsRadio.checked) {
-            if (assetsFields) assetsFields.style.display = '';
-            if (customFields) customFields.style.display = 'none';
-          } else if (customRadio && customRadio.checked) {
-            if (assetsFields) assetsFields.style.display = 'none';
-            if (customFields) customFields.style.display = '';
-          }
-        }
-
-        if (assetsRadio) assetsRadio.addEventListener('change', toggleFields);
-        if (customRadio) customRadio.addEventListener('change', toggleFields);
-
-        // Initial state
-        toggleFields();
-      });
-    </script>
-<?php
-  }
-
-  /**
-   * Sanitize right click type
-   */
-  public function sanitize_right_click_type($input)
-  {
-    $valid_types = array('assets', 'custom');
-    return in_array($input, $valid_types) ? $input : 'assets';
-  }
-
-  /**
    * Sanitize URL input
    */
   public function sanitize_url($input)
@@ -200,33 +155,10 @@ class WP_Logo_Link_Admin
   }
 
   /**
-   * Sanitize custom URL with validation
-   */
-  public function sanitize_custom_url($input)
-  {
-    $sanitized_url = esc_url_raw($input);
-
-    // Check if custom option is selected and URL is empty
-    $right_click_type = get_option('wpll_right_click_type', 'assets');
-    if ($right_click_type === 'custom' && empty($sanitized_url)) {
-      add_settings_error(
-        'wpll_custom_url',
-        'wpll_custom_url_error',
-        'Custom URL is required when using Custom Link option.',
-        'error'
-      );
-      // Return the previous value if validation fails
-      return get_option('wpll_custom_url');
-    }
-
-    return $sanitized_url;
-  }
-
-  /**
    * Show admin notices
    */
   public function show_admin_notices()
   {
-    settings_errors('wpll_custom_url');
+    settings_errors('wpll_settings');
   }
 }
