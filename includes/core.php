@@ -61,18 +61,18 @@ class WP_Logo_Link
    */
   public function activate()
   {
-    // Set default options
-    if (!get_option('wpll_assets_text')) {
-      update_option('wpll_assets_text', 'View Logo Assets');
+    // Set default options only if they don't exist
+    if (!get_option('wpll_right_click_type')) {
+      update_option('wpll_right_click_type', 'assets');
     }
     if (!get_option('wpll_assets_url')) {
-      update_option('wpll_assets_url', admin_url('upload.php'));
+      update_option('wpll_assets_url', '');
     }
     if (!get_option('wpll_custom_text')) {
-      update_option('wpll_custom_text', 'About Our Brand');
+      update_option('wpll_custom_text', '');
     }
     if (!get_option('wpll_custom_url')) {
-      update_option('wpll_custom_url', home_url('/about'));
+      update_option('wpll_custom_url', '');
     }
   }
 
@@ -81,7 +81,14 @@ class WP_Logo_Link
    */
   public function deactivate()
   {
-    // Clean up if needed
+    // Clean up if needed - keeping options for now in case of reactivation
+    // Uncomment below to remove all plugin options on deactivation
+    
+    delete_option('wpll_right_click_type');
+    delete_option('wpll_assets_url');
+    delete_option('wpll_custom_text');
+    delete_option('wpll_custom_url');
+    
   }
 
   /**

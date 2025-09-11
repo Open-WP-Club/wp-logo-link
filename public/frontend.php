@@ -11,39 +11,146 @@ if (!defined('ABSPATH')) {
 
 class WP_Logo_Link_Frontend
 {
+  private $cache_key = 'wpll_logo_selector_cache';
+  private $cache_duration = 24 * HOUR_IN_SECONDS; // 24 hours
 
   /**
    * Constructor
    */
   public function __construct()
   {
-    add_action('wp_footer', array($this, 'add_logo_behavior'));
+    add_action('wp_enqueue_scripts', array($this, 'conditionally_enqueue_scripts'));
+    add_action('switch_theme', array($this, 'clear_logo_cache'));
+    add_action('customize_save_after', array($this, 'clear_logo_cache'));
   }
 
   /**
-   * Add logo click behavior to frontend
+   * Conditionally enqueue scripts only when needed
    */
-  public function add_logo_behavior()
+  public function conditionally_enqueue_scripts()
   {
-    $right_click_type = get_option('wpll_right_click_type', 'assets');
-    $custom_text = get_option('wpll_custom_text');
-
-    // Determine redirect URL based on settings
-    $redirect_url = $this->get_redirect_url($right_click_type);
-
-    // Don't add behavior if no redirect URL is available
-    if (empty($redirect_url)) {
+    // Early exit if no valid configuration
+    if (!$this->should_load_scripts()) {
       return;
     }
 
-    $this->output_logo_script($redirect_url, $right_click_type, $custom_text);
+    // Check if logo exists on this page
+    if (!$this->logo_exists_on_page()) {
+      return;
+    }
+
+    // Enqueue our scripts and styles
+    wp_enqueue_script(
+      'wpll-frontend',
+      WPLL_PLUGIN_URL . 'assets/js/frontend.js',
+      array(),
+      WPLL_VERSION,
+      true
+    );
+
+    wp_enqueue_style(
+      'wpll-frontend',
+      WPLL_PLUGIN_URL . 'assets/css/frontend.css',
+      array(),
+      WPLL_VERSION
+    );
+
+    // Localize script with configuration
+    wp_localize_script('wpll-frontend', 'wpllConfig', array(
+      'homeUrl' => home_url('/'),
+      'redirectUrl' => $this->get_redirect_url(),
+      'menuLabel' => $this->get_menu_label(),
+      'rightClickType' => get_option('wpll_right_click_type', 'assets'),
+      'customText' => get_option('wpll_custom_text', ''),
+      'logoSelector' => $this->get_cached_logo_selector()
+    ));
+  }
+
+  /**
+   * Check if scripts should be loaded based on configuration
+   */
+  private function should_load_scripts()
+  {
+    $right_click_type = get_option('wpll_right_click_type', 'assets');
+
+    // If custom type but no URL set, don't load
+    if ($right_click_type === 'custom') {
+      $custom_url = get_option('wpll_custom_url');
+      if (empty($custom_url)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if logo exists on current page with caching
+   */
+  private function logo_exists_on_page()
+  {
+    // Use cached selector if available
+    $cached_selector = $this->get_cached_logo_selector();
+
+    if ($cached_selector) {
+      return true; // If we have a cached selector, assume logo exists
+    }
+
+    // If no cache, we'll need to rely on common selectors
+    // In a real implementation, this could be enhanced with AJAX detection
+    return true;
+  }
+
+  /**
+   * Get cached logo selector or detect and cache it
+   */
+  private function get_cached_logo_selector()
+  {
+    $cached_selector = get_transient($this->cache_key);
+
+    if ($cached_selector !== false) {
+      return $cached_selector;
+    }
+
+    // Detect logo selector and cache it
+    $detected_selector = $this->detect_logo_selector();
+
+    if ($detected_selector) {
+      set_transient($this->cache_key, $detected_selector, $this->cache_duration);
+      return $detected_selector;
+    }
+
+    return false;
+  }
+
+  /**
+   * Detect which logo selector works on current theme
+   */
+  private function detect_logo_selector()
+  {
+    $selectors = $this->get_logo_selectors();
+
+    // For now, return the first selector
+    // In a more advanced implementation, this could use headless browser detection
+    // or analyze the theme's structure
+    return $selectors[0] ?? '.custom-logo-link';
+  }
+
+  /**
+   * Clear logo selector cache
+   */
+  public function clear_logo_cache()
+  {
+    delete_transient($this->cache_key);
   }
 
   /**
    * Get the redirect URL based on settings
    */
-  private function get_redirect_url($right_click_type)
+  private function get_redirect_url()
   {
+    $right_click_type = get_option('wpll_right_click_type', 'assets');
+
     if ($right_click_type === 'custom') {
       $redirect_url = get_option('wpll_custom_url');
       if (empty($redirect_url)) {
@@ -60,132 +167,17 @@ class WP_Logo_Link_Frontend
   }
 
   /**
-   * Output the JavaScript for logo behavior
-   */
-  private function output_logo_script($redirect_url, $right_click_type, $custom_text)
-  {
-    $home_url = home_url('/');
-    $menu_label = $this->get_menu_label($right_click_type, $custom_text);
-?>
-    <style>
-      #wpll-context-menu {
-        position: fixed;
-        background: white;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        padding: 8px 0;
-        z-index: 9999;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        font-size: 14px;
-        min-width: 180px;
-        display: none;
-      }
-
-      #wpll-context-menu a {
-        display: block;
-        padding: 8px 16px;
-        color: #333;
-        text-decoration: none;
-        border: none;
-        background: none;
-        width: 100%;
-        text-align: left;
-        box-sizing: border-box;
-      }
-
-      #wpll-context-menu a:hover {
-        background-color: #f5f5f5;
-        color: #000;
-      }
-
-      #wpll-context-menu .wpll-menu-icon {
-        margin-right: 8px;
-        font-style: normal;
-      }
-    </style>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const siteLogo = document.querySelector('.site-logo, .custom-logo-link, .site-logo a, .custom-logo');
-        if (siteLogo) {
-          // Create custom context menu
-          const contextMenu = document.createElement('div');
-          contextMenu.id = 'wpll-context-menu';
-          contextMenu.innerHTML = `
-                    <a href="<?php echo esc_js($home_url); ?>" class="wpll-home-link">
-                        <span class="wpll-menu-icon">🏠</span>Go to Homepage
-                    </a>
-                    <a href="<?php echo esc_js($redirect_url); ?>" class="wpll-custom-link">
-                        <span class="wpll-menu-icon"><?php echo $right_click_type === 'custom' ? '🔗' : '📁'; ?></span><?php echo esc_js($menu_label); ?>
-                    </a>
-                `;
-          document.body.appendChild(contextMenu);
-
-          // Show context menu on right-click
-          siteLogo.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-
-            // Position the menu near the cursor
-            contextMenu.style.left = e.pageX + 'px';
-            contextMenu.style.top = e.pageY + 'px';
-            contextMenu.style.display = 'block';
-
-            // Adjust position if menu goes off screen
-            const rect = contextMenu.getBoundingClientRect();
-            if (rect.right > window.innerWidth) {
-              contextMenu.style.left = (e.pageX - rect.width) + 'px';
-            }
-            if (rect.bottom > window.innerHeight) {
-              contextMenu.style.top = (e.pageY - rect.height) + 'px';
-            }
-          });
-
-          // Hide context menu when clicking elsewhere
-          document.addEventListener('click', function(e) {
-            if (!contextMenu.contains(e.target)) {
-              contextMenu.style.display = 'none';
-            }
-          });
-
-          // Hide context menu on escape key
-          document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-              contextMenu.style.display = 'none';
-            }
-          });
-
-          // Ensure left click goes to homepage
-          if (siteLogo.tagName.toLowerCase() === 'a') {
-            siteLogo.setAttribute('href', <?php echo json_encode($home_url); ?>);
-          } else {
-            siteLogo.addEventListener('click', function(e) {
-              if (e.button === 0) { // Left click
-                window.location.href = <?php echo json_encode($home_url); ?>;
-              }
-            });
-          }
-
-          // Add custom text as title attribute if provided
-          <?php if ($right_click_type === 'custom' && !empty($custom_text)): ?>
-            siteLogo.setAttribute('title', 'Left-click: Homepage | Right-click: <?php echo esc_js($custom_text); ?>');
-          <?php else: ?>
-            siteLogo.setAttribute('title', 'Left-click: Homepage | Right-click: More options');
-          <?php endif; ?>
-        }
-      });
-    </script>
-<?php
-  }
-
-  /**
    * Get the menu label for the second option
    */
-  private function get_menu_label($right_click_type, $custom_text)
+  private function get_menu_label()
   {
+    $right_click_type = get_option('wpll_right_click_type', 'assets');
+    $custom_text = get_option('wpll_custom_text');
+
     if ($right_click_type === 'custom') {
       return !empty($custom_text) ? $custom_text : 'Custom Link';
     } else {
-      return 'Go to Media Library';
+      return 'Media Library';
     }
   }
 
@@ -195,15 +187,28 @@ class WP_Logo_Link_Frontend
   public function get_logo_selectors()
   {
     $selectors = apply_filters('wpll_logo_selectors', array(
-      '.site-logo',
       '.custom-logo-link',
+      '.site-logo',
       '.site-logo a',
       '.custom-logo',
       '.site-branding a',
       '.logo a',
-      '.header-logo a'
+      '.header-logo a',
+      '.navbar-brand',
+      '.brand',
+      '[class*="logo"] a'
     ));
 
-    return implode(', ', $selectors);
+    return $selectors;
+  }
+
+  /**
+   * Legacy method for backward compatibility
+   * This is now replaced by conditional script loading
+   */
+  public function add_logo_behavior()
+  {
+    // This method is kept for backward compatibility but functionality
+    // has been moved to conditionally_enqueue_scripts
   }
 }

@@ -1,0 +1,166 @@
+/**
+ * WP Logo Link Admin Styles
+ * Simplified to match WordPress admin design
+ */
+
+/* Settings section styling */
+.wpll-settings-intro {
+  margin-bottom: 20px;
+}
+
+.wpll-performance-info {
+  margin-top: 8px;
+}
+
+.wpll-performance-info small {
+  color: #646970;
+  font-style: italic;
+}
+
+/* Radio button styling */
+fieldset {
+  margin-bottom: 10px;
+  border: none;
+  padding: 0;
+}
+
+.wpll-radio-option {
+  display: block;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.wpll-radio-option input[type="radio"] {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.wpll-radio-label {
+  vertical-align: middle;
+}
+
+.wpll-radio-option input[type="radio"]:checked+.wpll-radio-label {
+  color: #0073aa;
+  font-weight: 600;
+}
+
+/* Conditional field styling */
+.wpll-conditional-field {
+  margin-top: 15px;
+  padding-left: 20px;
+  transition: all 0.3s ease;
+}
+
+.wpll-conditional-field[style*="none"] {
+  display: none !important;
+}
+
+/* URL input and test button styling */
+.wpll-url-input {
+  margin-right: 10px !important;
+  max-width: 400px;
+}
+
+.wpll-test-url {
+  margin-left: 5px;
+  vertical-align: top;
+  height: 30px;
+  line-height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.wpll-test-url:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* URL status styling - simplified */
+.wpll-url-status {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 13px;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.wpll-url-status.success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.wpll-url-status.error {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.wpll-url-status.warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.wpll-url-status.loading {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.wpll-status-icon {
+  margin-right: 5px;
+}
+
+/* Animation for status messages */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Description text styling */
+.description {
+  color: #646970;
+  margin-top: 5px !important;
+}
+
+/* Responsive design for smaller screens */
+@media screen and (max-width: 782px) {
+  .wpll-url-input {
+    max-width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .wpll-test-url {
+    margin-left: 0;
+    display: block;
+    width: auto;
+  }
+
+  .wpll-conditional-field {
+    padding-left: 10px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  .wpll-conditional-field,
+  .wpll-url-status {
+    transition: none;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+}
