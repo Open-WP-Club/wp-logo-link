@@ -4,7 +4,7 @@
  * Plugin Name:             WP Logo Link
  * Plugin URI:              https://github.com/Open-WP-Club/wp-logo-link/
  * Description:             Simply customize your site logo's left and right click behavior.
- * Version:                 1.2.0
+ * Version:                 1.2.1
  * Author:                  Open WP Club
  * Author URI:              https://openwpclub.com
  * License:                 GPL-2.0 License
@@ -23,7 +23,7 @@ if (!defined('ABSPATH')) {
 // Define plugin constants
 define('WPLL_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPLL_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('WPLL_VERSION', '1.2.0');
+define('WPLL_VERSION', '1.2.1');
 
 // Include required files
 require_once WPLL_PLUGIN_DIR . 'includes/core.php';
